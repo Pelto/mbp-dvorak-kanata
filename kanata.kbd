@@ -1,0 +1,91 @@
+;; ============================================================================
+;; MacBook Pro internal keyboard — port of the niche bits of q11-dvorak-firmware
+;;
+;; Source of truth: ~/Repositories/pelto/q11-dvorak-firmware/keymap.c
+;;
+;; IMPORTANT: macOS input source stays "Svorak A.5". This config does NOT
+;; remap letters — Svorak A5 already does that, and its Option layer already
+;; reproduces the QMK MAC_SPECIAL symbol set (24/26 positions identical).
+;; kanata only adds the behaviours a .keylayout cannot express.
+;;
+;; Key assignments (mirrors the Q11 where the hardware allows):
+;;   Left Option   untouched -> real Option + Svorak A5 special chars
+;;                             (Q11: LOpt = KC_LOPT)
+;;   Right Option  hold      -> FN layer   (Q11: ROpt = MO(MAC_FN))
+;;   Caps Lock               -> Enter      (Q11: KC_ENT on caps position)
+;;   Space         tap       -> space
+;;                 hold      -> home row mods  (Q11: LT(MAC_MOD_L/R, KC_SPC))
+;;
+;; Timing matches config.h: PERMISSIVE_HOLD -> tap-hold-release,
+;; no TAPPING_TERM override -> QMK default 200ms.
+;; ============================================================================
+
+(defcfg
+  process-unmapped-keys yes
+  ;; Only ever grab the built-in keyboard. The Q11 and the MX Keys are never
+  ;; touched -- kanata ignores any device not named here.
+  ;; NOTE: not live-reloadable; adding a device needs a kanata restart.
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+  )
+)
+
+(defvar
+  tap  200
+  hold 200
+)
+
+;; ── Cmd shortcuts, translated through Svorak A5 ─────────────────────────────
+;; The Q11 runs with a Swedish QWERTY OS layout, so LGUI(KC_C) really is Cmd+c.
+;; Here the OS layout is Svorak A5, so we must press the physical key that
+;; Svorak A5 maps to that letter. Resolved from the layout's command keyMap:
+;;   a -> a    z -> /    c -> i    v -> .    x -> b
+(defalias
+  sla (macro M-a)        ;; Select All   <- LGUI(KC_A)
+  udo (macro M-/)        ;; Undo         <- LGUI(KC_Z)
+  rdo (macro M-S-/)      ;; Redo         <- SGUI(KC_Z)
+  cpy (macro M-i)        ;; Copy         <- LGUI(KC_C)
+  pst (macro M-.)        ;; Paste        <- LGUI(KC_V)
+  cut (macro M-b)        ;; Cut          <- LGUI(KC_X)
+
+  fn  (layer-while-held fn)
+  spc (tap-hold-release $tap $hold spc (layer-while-held mod))
+)
+
+(defsrc
+  caps  q w e r t y u i o p
+        a s d f g h j k l ;
+        z x c v b n m
+  spc   ralt
+)
+
+;; ── base ────────────────────────────────────────────────────────────────────
+(deflayer base
+  ret   _ _ _ _ _ _ _ _ _ _
+        _ _ _ _ _ _ _ _ _ _
+        _ _ _ _ _ _ _
+  @spc  @fn
+)
+
+;; ── fn (hold right Option) — MAC_FN ─────────────────────────────────────────
+;; Left:  Q/W/E = Ins/Home/PgUp   A/S/D = Del/End/PgDn   F = SelAll
+;;        Z/X = Undo/Redo   C/V/B = Copy/Paste/Cut   N/M = WordLeft/WordRight
+;; Right: U = Bspc   I = Up   O = Del   J/K/L = Left/Down/Right
+(deflayer fn
+  _     ins  home pgup _    _    _    bspc up   del  _
+        del  end  pgdn @sla _    _    left down rght _
+        @udo @rdo @cpy @pst @cut A-left A-rght
+  _     _
+)
+
+;; ── mod (hold Space) — MAC_MOD_L + MAC_MOD_R combined ───────────────────────
+;; The Q11 splits these across two space bars; the laptop has one, so both
+;; hands' mods live on a single layer. This is strictly more capable: you can
+;; take Cmd+Opt on the right hand and hit the letter with the left.
+;;   A=Shift S=Opt D=Ctrl F=Cmd   J=Cmd K=Ctrl L=Opt Ö=Shift
+(deflayer mod
+  _     _    _    _    _    _ _ _    _    _    _
+        lsft lalt lctl lmet _ _ rmet rctl ralt rsft
+        _    _    _    _    _ _ _
+  _     _
+)

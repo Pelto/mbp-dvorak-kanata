@@ -1,0 +1,28 @@
+# ── macOS ───────────────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# ── kanata output — NEVER COMMIT ────────────────────────────────────────────
+# kanata --debug / --trace logs every key event, so these files contain
+# everything typed while it was running, passwords included.
+*.log
+*.log.*
+logs/
+kanata-debug*
+kanata-trace*
+trace*.txt
+
+# ── machine-local overrides ─────────────────────────────────────────────────
+# Device names and launchd paths differ per machine and embed the username.
+*.local
+*.local.kbd
+local.kbd
+com.*.plist.local
+
+# ── editors / tooling ───────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.idea/
